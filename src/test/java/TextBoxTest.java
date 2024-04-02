@@ -1,58 +1,80 @@
 import com.codeborne.selenide.Configuration;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
-import java.io.File;
-
-import static com.codeborne.selenide.Condition.text;
-import static com.codeborne.selenide.Selectors.byText;
-import static com.codeborne.selenide.Selenide.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvFileSource;
+import org.junit.jupiter.params.provider.CsvSource;
+import pages.RegistrationPage;
 
 public class TextBoxTest {
+    RegistrationPage registrationPage = new RegistrationPage();
 
     @BeforeAll
     static void BeforeAll() {
         Configuration.browserSize = "1920x1080";
         Configuration.baseUrl = "https://demoqa.com";
+        Configuration.pageLoadTimeout = 100000;
     }
 
-    @Test
-    void Test() {
-        open("/automation-practice-form");
-        $(".text-center").shouldHave(text("Practice Form"));
+/*    @CsvSource({
+            "Vladislav, Yustus, deles2013@yandex.ru, Male, 7920631395, 02, June, 2003, Math, Hindi, Sports, Music, ul Keramzavoda d 6 kv 2, NCR, Delhi",
+            "Anton, GonDone, sharik228@yandex.ru, Female, 7000631395, 01, December, 2004, Math, Hindi, Sports, Music, ul Keramzavoda d 6 kv 2, NCR, Delhi"
+    })*/
+    @CsvFileSource(resources = "/parametrs.csv")
+    @ParameterizedTest(name = "{0} {1}")
+    void demoQAAuthFormTest(
+            String userName,
+            String userLastName,
+            String userEmail,
+            String gender,
+            String mobileNumber,
+            String day,
+            String month,
+            String year,
+            String firstSubject,
+            String secondSubject,
+            String firstHobby,
+            String secondHobby,
+            String address,
+            String state,
+            String city
+    ) {
+/*        String userName = "Vladislav",
+                userLastName = "Yustus",
+                userEmail = "deles2013@yandex.ru",
+                gender = "Male",
+                mobileNumber = "7920631395",
+                day = "02",
+                month = "June",
+                year = "2003",
+                firstSubject = "Math",
+                secondSubject = "Hindi",
+                firstHobby = "Sports",
+                secondHobby = "Music",
+                address = "ul.Keramzavoda d.6. kv.2",
+                state = "NCR",
+                city = "Delhi";*/
 
-        $("#firstName").setValue("Vladislav");
-        $("#lastName").setValue("Yustus");
-        $("#userEmail").setValue("deles2013@yandex.ru");
-        $("#userNumber").setValue("79206313951");
-        $("#subjectsInput").setValue("Math").pressEnter();
-        $("#subjectsInput").setValue("Hindi").pressEnter();
 
-        $(byText("Male")).click();
-        $("#dateOfBirthInput").click();
-        $(byText("June")).click();
-        $(byText("2003")).click();
-        $("[aria-label='Choose Monday, June 2nd, 2003']").click();
+        registrationPage.openPage()
+                .setFirstName(userName)
+                .setLastName(userLastName)
+                .setEmail(userEmail)
+                .setGender(gender)
+                .setMobileNumber(mobileNumber)
+                .setBirthDate(day, month, year)
+                .setSubject(firstSubject, secondSubject)
+                .setHobbies(firstHobby, secondHobby)
+                .uploadFile()
+                .setAddress(address)
+                .setStateAndCity(state, city)
+                .submitResults();
 
-        $$(".custom-control.custom-checkbox.custom-control-inline").first().click();
-        $(byText("Music")).click();
-
-        File file = new File("src/test/resources/star.png");
-        $("input#uploadPicture").uploadFile(file);
-
-        $("#currentAddress").setValue("ul.Keramzavoda, d.6. kv.2");
-        $(byText("Select State")).click();
-        $(byText("NCR")).click();
-
-        $(byText("Select City")).click();
-        $(byText("Noida")).click();
-
-        $("#submit").click();
-
-        sleep(5000);
-
-
-
+        registrationPage.verifyResultsModalAppears().
+                verifyResult("Student Name", userName + " " + userLastName).
+                verifyResult("Student Email", userEmail).
+                verifyResult("Gender", gender).
+                verifyResult("Mobile", mobileNumber);
 
     }
 }
